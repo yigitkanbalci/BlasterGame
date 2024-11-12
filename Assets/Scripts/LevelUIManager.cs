@@ -1,10 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class LevelUIManager : MonoBehaviour
 {
-    public Text goalText;
-    public Text moveText;
+    public TMP_Text goalText;
+    public TMP_Text moveText;
 
     public void SetGoalText(string goal)
     {

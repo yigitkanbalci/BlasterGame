@@ -19,12 +19,15 @@ public class Board : MonoBehaviour
     public Cube[,] allCubes;
 
     private LevelLoader levelLoader;
+    private LevelUIManager levelUIManager;
 
 
     void Start()
     {
         Debug.Log("Board Start");
         levelLoader = FindObjectOfType<LevelLoader>();
+        levelUIManager = FindObjectOfType<LevelUIManager>();
+
         if (levelLoader != null)
         {
             // Load the desired level
@@ -105,6 +108,7 @@ public class Board : MonoBehaviour
         height = levelData.grid_height;
         moveCount = levelData.move_count;
         allCubes = new Cube[width, height];
+        levelUIManager.SetMoveText(moveCount);
         InitializeBoard();
         SetUpBoard(levelData.grid);
     }
