@@ -55,30 +55,72 @@ public class Board : MonoBehaviour
             return;
         }
 
+        RectTransform boardRect = GetComponent<RectTransform>();
+
+        // Padding values for tiles and rows
+        float horizontalPadding = 5f; // Space between tiles horizontally
+        float verticalPadding = 5f;   // Space between rows vertically
+
+        // Calculate the tile size considering the padding
+        float tileSize = Mathf.Min(
+            (boardRect.rect.width - (horizontalPadding * (width - 1))) / width,
+            (boardRect.rect.height - (verticalPadding * (height - 1))) / height
+        );
+
         allCubes = new Cube[width, height];
 
         for (int y = 0; y < height; y++)
         {
+            // Instantiate a row
             GameObject row = Instantiate(rowPrefab, transform);
             if (row == null)
             {
-                Debug.LogError("Failed to instantiate row at index " + y);
+                Debug.LogError($"Failed to instantiate row at index {y}");
                 continue;
             }
-            row.name = "Row_" + (y + 1);
-            Debug.Log("Created " + row.name);
+
+            row.name = $"Row_{y + 1}";
+
+            RectTransform rowRect = row.GetComponent<RectTransform>();
+            rowRect.sizeDelta = new Vector2(boardRect.rect.width, tileSize);
+
+            // Add vertical padding to the row's position
+            float rowOffsetY = -y * (tileSize + verticalPadding);
+            rowRect.anchoredPosition = new Vector2(0, rowOffsetY);
+
+            // Set the sibling index to ensure rows are rendered in the correct order
+            row.transform.SetSiblingIndex(y); // Assign each row its correct sibling index based on its loop iteration
+
+            // Optional: Use Canvas sorting for extra control
+            Canvas rowCanvas = row.GetComponent<Canvas>();
+            if (rowCanvas == null)
+            {
+                rowCanvas = row.AddComponent<Canvas>(); // Add Canvas if not already present
+            }
+
+            rowCanvas.overrideSorting = true;
+            rowCanvas.sortingOrder = height - y; // Rows at the top get higher sorting order
 
             for (int x = 0; x < width - 1; x++)
             {
+                // Instantiate a tile inside the row
                 GameObject tile = Instantiate(tilePrefab, row.transform);
                 if (tile == null)
                 {
-                    Debug.LogError("Failed to instantiate tile at (" + x + ", " + y + ")");
+                    Debug.LogError($"Failed to instantiate tile at ({x}, {y})");
                     continue;
                 }
-                tile.name = "Tile_" + (x + 1);
-                Debug.Log("Created " + tile.name + " in " + row.name);
 
+                RectTransform tileRect = tile.GetComponent<RectTransform>();
+                tileRect.sizeDelta = new Vector2(tileSize, tileSize);
+
+                // Add horizontal padding to the tile's position
+                float xOffset = x * (tileSize + horizontalPadding);
+                tileRect.anchoredPosition = new Vector2(xOffset, 0);
+
+                tile.name = $"Tile_{x + 1}_{y + 1}";
+
+                // Initialize Cube if necessary
                 Cube cube = tile.GetComponent<Cube>();
                 if (cube == null)
                 {
@@ -90,13 +132,16 @@ public class Board : MonoBehaviour
                     cube.x = x;
                     cube.y = y;
                     allCubes[x, y] = cube;
-                    Debug.Log("Initialized Cube at (" + x + ", " + y + ")");
                 }
             }
         }
 
-        Debug.Log("Board Initialization Complete");
+        Debug.Log("Board initialization complete with proper sibling indices and sorting.");
     }
+
+
+
+
 
 
 
@@ -172,10 +217,30 @@ public class Board : MonoBehaviour
         }
 
         if (item != null)
-        {
-            RectTransform itemRect = item.GetComponent<RectTransform>();
-            itemRect.anchoredPosition = new Vector2(0, height * 100); // Initial position above the board
-            itemRect.DOAnchorPos(Vector2.zero, 0.5f).SetEase(Ease.OutBounce); // Animate to the correct position
+        { // Initial position above the board
+
+
+            // Set the Image component to stretch
+            Image itemImage = item.GetComponent<Image>();
+            if (itemImage != null)
+            {
+                RectTransform itemRect = itemImage.rectTransform;
+
+                // Set anchor points (this won't affect the tween)
+                itemRect.anchorMin = Vector2.zero; // Bottom-left corner
+                itemRect.anchorMax = Vector2.one;  // Top-right corner
+
+                // Set padding (if needed, adjust these values)
+                float padding = 0.5f;
+                itemRect.offsetMin = new Vector2(padding, padding);   // Add padding from bottom-left
+                itemRect.offsetMax = new Vector2(-padding, -padding); // Add padding from top-right
+
+                // Ensure the starting position is animated
+                itemRect.anchoredPosition = new Vector2(0, 100); // Start off-screen or above the board
+                itemRect.DOAnchorPos(Vector2.zero, 0.5f).SetEase(Ease.OutBounce); // Animate to its final position
+            }
+
+            //itemRect.DOAnchorPos(Vector2.zero, 0.5f).SetEase(Ease.OutBounce); // Animate to the correct position
 
             if (item.GetComponent<Cube>() != null)
             {
