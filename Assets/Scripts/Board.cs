@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using DG.Tweening;
 
 public class Board : MonoBehaviour
@@ -17,6 +18,14 @@ public class Board : MonoBehaviour
     public int moveCount;
     public Sprite[] cubeSprites;
     public Cube[,] allCubes;
+    public Goal[] goals;
+
+    public Sprite boxSprite;
+    public Sprite vaseSprite;
+    public Sprite stoneSprite;
+
+    public Transform goalContainer;
+    public GameObject goalItemPrefab;
 
     private LevelLoader levelLoader;
     private LevelUIManager levelUIManager;
@@ -142,9 +151,86 @@ public class Board : MonoBehaviour
 
 
 
+    Goal[] CalculateGoals(string[] grid)
+    {
+        // Create a dictionary to store counts for each goal type
+        Dictionary<string, int> goalCounts = new Dictionary<string, int>
+    {
+        { "bo", 0 }, // Box
+        { "s", 0 },  // Stone
+        { "v", 0 }   // Vase
+    };
 
+        // Iterate through the grid and count occurrences
+        foreach (string item in grid)
+        {
+            if (goalCounts.ContainsKey(item))
+            {
+                goalCounts[item]++;
+            }
+        }
 
+        // Convert dictionary to Goal array
+        List<Goal> goals = new List<Goal>();
+        foreach (var pair in goalCounts)
+        {
+            if (pair.Value > 0)
+            {
+                goals.Add(new Goal { goalType = pair.Key, count = pair.Value });
+            }
+        }
 
+        return goals.ToArray();
+    }
+
+    Sprite GetGoalSprite(string goalType)
+    {
+        switch (goalType)
+        {
+            case "bo": return boxSprite;   // Box sprite
+            case "s": return stoneSprite; // Stone sprite
+            case "v": return vaseSprite;  // Vase sprite
+            default: return null;
+        }
+    }
+
+    void PopulateGoals(Goal[] goals)
+    {
+        foreach (Transform child in goalContainer)
+        {
+            Destroy(child.gameObject); // Clear any existing UI
+        }
+
+        foreach (Goal goal in goals)
+        {
+            GameObject goalItem = Instantiate(goalItemPrefab, goalContainer);
+            goalItem.transform.localPosition = Vector3.zero;
+            goalItem.transform.localRotation = Quaternion.identity;
+            goalItem.transform.localScale = Vector3.one;
+            print(goalItem);
+            Image icon = goalItem.GetComponentInChildren<Image>();
+            TMP_Text count = goalItem.GetComponentInChildren<TMP_Text>();
+            print(goalItem.GetComponent<RectTransform>().anchoredPosition);
+
+            print(icon);
+            print(count);
+            // Set icon and count dynamically
+            icon.sprite = GetGoalSprite(goal.goalType); // Fetch sprite based on goal type
+            icon.SetNativeSize();
+            RectTransform iconRect = icon.GetComponent<RectTransform>();
+            iconRect.localScale = Vector3.one; // Reset scale
+
+            // Ensure it fits within a maximum size
+            float maxSize = 50f; // Adjust this value based on your UI design
+            float largestDimension = Mathf.Max(iconRect.sizeDelta.x, iconRect.sizeDelta.y);
+            if (largestDimension > maxSize)
+            {
+                float scaleFactor = maxSize / largestDimension;
+                iconRect.sizeDelta *= scaleFactor; // Scale down proportionally
+            }
+            count.text = goal.count.ToString();
+        }
+    }
 
 
     void LoadLevel(LevelData levelData)
@@ -154,6 +240,12 @@ public class Board : MonoBehaviour
         moveCount = levelData.move_count;
         allCubes = new Cube[width, height];
         levelUIManager.SetMoveText(moveCount);
+        goals = CalculateGoals(levelData.grid);
+        for (int i = 0; i < goals.Length; i++)
+        {
+            print(goals[i].goalType + " : "+ goals[i].count);
+        }
+        PopulateGoals(goals);
         InitializeBoard();
         SetUpBoard(levelData.grid);
     }

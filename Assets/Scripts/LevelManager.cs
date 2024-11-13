@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
+
+
 public class LevelLoader : MonoBehaviour
 {
     public string filePrefix = "level_";
@@ -58,6 +60,14 @@ public class LevelData
     public int grid_height;
     public int move_count;
     public string[] grid;
+    public Goal[] goals;
+}
+
+[System.Serializable]
+public class Goal
+{
+    public string goalType;
+    public int count;
 }
 
 [System.Serializable]
@@ -65,3 +75,5 @@ public class Levels
 {
     public LevelData[] levels;
 }
+
+
