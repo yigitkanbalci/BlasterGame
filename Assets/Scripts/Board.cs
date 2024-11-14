@@ -96,7 +96,7 @@ public class Board : MonoBehaviour
             rowRect.sizeDelta = new Vector2(boardRect.rect.width, tileSize);
 
             // Explicitly set Z-position for rows to control depth
-            float zPosition = -y; // Rows lower in hierarchy are rendered behind
+            float zPosition = y * -0.1f; // Rows lower in hierarchy are rendered behind
             row.transform.localPosition = new Vector3(0, 0, zPosition);
 
             // Calculate vertical position for bottom-to-top layout
@@ -104,7 +104,14 @@ public class Board : MonoBehaviour
             rowRect.anchoredPosition = new Vector2(0, rowOffsetY);
 
             // Set sibling index for bottom-to-top hierarchy
-            row.transform.SetSiblingIndex(y);
+
+            string sortingLayerName = $"Row_{y + 1}";
+            Renderer rowRenderer = row.GetComponent<Renderer>();
+            if (rowRenderer != null)
+            {
+                rowRenderer.sortingLayerName = sortingLayerName;
+                rowRenderer.sortingOrder = y;
+            }
 
             // Initialize tiles and cubes for this row
             for (int x = 0; x < width - 1; x++)
@@ -138,6 +145,18 @@ public class Board : MonoBehaviour
                     cube.y = y; // Correct y-index for bottom-to-top layout
                     allCubes[x, y] = cube;
                 }
+            }
+
+            Canvas rowCanvas = row.GetComponent<Canvas>();
+            if (rowCanvas != null)
+            {
+                rowCanvas.overrideSorting = true;
+                rowCanvas.sortingOrder = height - y; // Rows higher up have higher sortingOrder
+            }
+
+            if (row.GetComponent<GraphicRaycaster>() == null)
+            {
+                row.AddComponent<GraphicRaycaster>();
             }
         }
 
