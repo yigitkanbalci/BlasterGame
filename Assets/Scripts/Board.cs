@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Rendering;
 using TMPro;
 using DG.Tweening;
 
@@ -78,6 +79,7 @@ public class Board : MonoBehaviour
 
         allCubes = new Cube[width, height];
 
+        // Initialize rows from bottom to top
         for (int y = 0; y < height; y++)
         {
             // Instantiate a row
@@ -93,26 +95,20 @@ public class Board : MonoBehaviour
             RectTransform rowRect = row.GetComponent<RectTransform>();
             rowRect.sizeDelta = new Vector2(boardRect.rect.width, tileSize);
 
-            // Add vertical padding to the row's position
-            float rowOffsetY = -y * (tileSize + verticalPadding);
+            // Explicitly set Z-position for rows to control depth
+            float zPosition = -y; // Rows lower in hierarchy are rendered behind
+            row.transform.localPosition = new Vector3(0, 0, zPosition);
+
+            // Calculate vertical position for bottom-to-top layout
+            float rowOffsetY = y * (tileSize + verticalPadding);
             rowRect.anchoredPosition = new Vector2(0, rowOffsetY);
 
-            // Set the sibling index to ensure rows are rendered in the correct order
-            row.transform.SetSiblingIndex(y); // Assign each row its correct sibling index based on its loop iteration
+            // Set sibling index for bottom-to-top hierarchy
+            row.transform.SetSiblingIndex(y);
 
-            // Optional: Use Canvas sorting for extra control
-            Canvas rowCanvas = row.GetComponent<Canvas>();
-            if (rowCanvas == null)
-            {
-                rowCanvas = row.AddComponent<Canvas>(); // Add Canvas if not already present
-            }
-
-            rowCanvas.overrideSorting = true;
-            rowCanvas.sortingOrder = height - y; // Rows at the top get higher sorting order
-
+            // Initialize tiles and cubes for this row
             for (int x = 0; x < width - 1; x++)
             {
-                // Instantiate a tile inside the row
                 GameObject tile = Instantiate(tilePrefab, row.transform);
                 if (tile == null)
                 {
@@ -123,13 +119,13 @@ public class Board : MonoBehaviour
                 RectTransform tileRect = tile.GetComponent<RectTransform>();
                 tileRect.sizeDelta = new Vector2(tileSize, tileSize);
 
-                // Add horizontal padding to the tile's position
+                // Calculate horizontal position for left-to-right layout
                 float xOffset = x * (tileSize + horizontalPadding);
                 tileRect.anchoredPosition = new Vector2(xOffset, 0);
 
                 tile.name = $"Tile_{x + 1}_{y + 1}";
 
-                // Initialize Cube if necessary
+                // Initialize a cube inside this tile
                 Cube cube = tile.GetComponent<Cube>();
                 if (cube == null)
                 {
@@ -139,13 +135,13 @@ public class Board : MonoBehaviour
                 if (cube != null)
                 {
                     cube.x = x;
-                    cube.y = y;
+                    cube.y = y; // Correct y-index for bottom-to-top layout
                     allCubes[x, y] = cube;
                 }
             }
         }
 
-        Debug.Log("Board initialization complete with proper sibling indices and sorting.");
+        Debug.Log("Board initialized with explicit Z-order and hierarchy.");
     }
 
 
@@ -252,7 +248,8 @@ public class Board : MonoBehaviour
 
     void SetUpBoard(string[] grid)
     {
-        for (int y = 0; y < height; y++)
+        // Iterate over rows in reverse order (top to bottom)
+        for (int y = height - 1; y >= 0; y--)
         {
             if (y >= transform.childCount)
             {
@@ -260,8 +257,11 @@ public class Board : MonoBehaviour
                 continue;
             }
 
-            Transform row = transform.GetChild(y);
-            for (int x = 0; x < width; x++)
+            Transform row = transform.GetChild(height - 1 - y);
+
+            row.SetSiblingIndex(height - 1 - y);
+            // Iterate over columns in reverse order (right to left)
+            for (int x = width - 1; x >= 0; x--)
             {
                 if (x >= row.childCount)
                 {
@@ -271,10 +271,13 @@ public class Board : MonoBehaviour
 
                 Transform tile = row.GetChild(x); // Get the tile transform
                 string itemType = grid[y * width + x];
+
+                // Spawn the item in reverse order
                 SpawnItem(x, y, tile, itemType);
             }
         }
     }
+
 
     void SpawnItem(int x, int y, Transform tile, string itemType)
     {
@@ -293,7 +296,9 @@ public class Board : MonoBehaviour
                 sprite = cubeSprites[index];
             }
             Color color = Color.white;
-            item.GetComponent<Cube>().Initialize(x, y, color, sprite);
+            Cube cube = item.GetComponent<Cube>();
+            cube.Initialize(x, y, color, sprite);
+
         }
         else if (itemType == "bo")
         {

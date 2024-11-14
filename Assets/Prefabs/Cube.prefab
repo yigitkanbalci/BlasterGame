@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2292123371559652697}
   - component: {fileID: 6805829657542601445}
   - component: {fileID: 213079761410110778}
-  - component: {fileID: 1468809805418363234}
+  - component: {fileID: 4654420610545977192}
   m_Layer: 5
   m_Name: Cube
   m_TagString: Untagged
@@ -92,7 +92,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &1468809805418363234
+--- !u!114 &4654420610545977192
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 0
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}

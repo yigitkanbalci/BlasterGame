@@ -21,7 +21,7 @@ public class Cube : MonoBehaviour
             image = GetComponent<Image>();
         }
 
-        //Debug.Log("Cube initialized at: " + x + ", " + y + " with color: " + cubeColor);
+        Debug.Log("Cube initialized at: " + x + ", " + y + " with color: " + cubeColor);
     }
 
     public void OnMouseDown()
