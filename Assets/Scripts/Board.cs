@@ -31,6 +31,9 @@ public class Board : MonoBehaviour
     private LevelLoader levelLoader;
     private LevelUIManager levelUIManager;
 
+    public GameObject gameOverPanel;
+    public Canvas levelCanvas;
+
 
     void Start()
     {
@@ -286,8 +289,6 @@ public class Board : MonoBehaviour
             // Iterate over columns in reverse order (right to left)
             for (int x = width - 1; x >= 0; x--)
             {
-                print("WIDTH: " + x);
-                print("HEIGHT" + y);
                 if (x >= row.childCount)
                 {
                     //Debug.LogError($"Column {x} in row {y} is out of bounds for row child count {row.childCount}");
@@ -300,17 +301,6 @@ public class Board : MonoBehaviour
                 // Spawn the item in reverse order
                 SpawnItem(x, y, tile, itemType);
             }
-        }
-
-        Debug.Log("State of allCubes before FillBoard:");
-        for (int y = height - 1; y >= 0; y--)
-        {
-            string rowLog = $"Row {y}: ";
-            for (int x = 0; x < width; x++)
-            {
-                rowLog += allCubes[x, y] != null ? $"[{x},{y}] " : "[null] ";
-            }
-            Debug.Log(rowLog);
         }
     }
 
@@ -387,18 +377,49 @@ public class Board : MonoBehaviour
 
     public void HandleCubeClick(Cube cube)
     {
-        Debug.Log("HandleCubeClick called for cube at: " + cube.x + ", " + cube.y);
+        //Debug.Log("HandleCubeClick called for cube at: " + cube.x + ", " + cube.y);
         List<Cube> matchingCubes = GetMatchingCubes(cube);
+
         if (matchingCubes.Count >= 2)
         {
-            //Debug.Log("Matching cubes found: " + matchingCubes.Count);
-            //foreach (Cube matchingCube in matchingCubes)
-            //{
-            //    Debug.Log("Cube to destroy: " + matchingCube.x + ", " + matchingCube.y);
-            //}
             StartCoroutine(DestroyCubes(matchingCubes));
+            // Decrement the move count
+            moveCount--;
+            levelUIManager.SetMoveText(moveCount); // Update UI (assuming you already have a method for this)
+
+            Debug.Log($"Moves left: {moveCount}");
+
+            // Check if moves are over
+            if (moveCount <= 0)
+            {
+                Debug.Log("Out of moves!");
+                ShowGameOverModal();
+                //CheckGameOver();
+            }
+        }
+        else
+        {
+            Debug.Log("Not enough matching cubes!");
         }
     }
+
+    private void ShowGameOverModal()
+    {
+        if (gameOverPanel != null)
+        {
+            levelCanvas.sortingOrder = 20;
+            gameOverPanel.SetActive(true);
+            RectTransform panelTransform = gameOverPanel.GetComponent<RectTransform>();
+            panelTransform.localScale = Vector3.zero; // Start with zero scale
+            panelTransform.DOScale(Vector3.one, 0.5f).SetEase(Ease.OutBounce); // Animate to full scale
+            Debug.Log("Game Over modal displayed.");
+        }
+        else
+        {
+            Debug.LogError("GameOverPanel is not assigned in the inspector.");
+        }
+    }
+
 
     List<Cube> GetMatchingCubes(Cube startCube)
     {
@@ -413,7 +434,7 @@ public class Board : MonoBehaviour
             if (matchingCubes.Contains(current)) continue;
 
             matchingCubes.Add(current);
-            Debug.Log($"Added cube to matchingCubes: ({current.x}, {current.y})");
+            //Debug.Log($"Added cube to matchingCubes: ({current.x}, {current.y})");
 
             foreach (Cube neighbor in GetNeighbors(current))
             {
@@ -422,12 +443,6 @@ public class Board : MonoBehaviour
                     cubesToCheck.Enqueue(neighbor);
                 }
             }
-        }
-
-        Debug.Log("Final matchingCubes:");
-        foreach (Cube cube in matchingCubes)
-        {
-            Debug.Log($"({cube.x}, {cube.y})");
         }
 
         return matchingCubes;

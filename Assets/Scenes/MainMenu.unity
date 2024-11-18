@@ -2779,7 +2779,7 @@ RectTransform:
   m_GameObject: {fileID: 923333220}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.485, y: 1.7346876, z: 1}
+  m_LocalScale: {x: 2.9328752, y: 2.8188672, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1992782946}
@@ -2791,7 +2791,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.0000076294, y: -351}
+  m_AnchoredPosition: {x: 0.26003, y: -351}
   m_SizeDelta: {x: 88.3746, y: -32.1684}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &923333222
@@ -5289,6 +5289,7 @@ MonoBehaviour:
       - rand
       - rand
       - rand
+      goals: []
     - level_number: 2
       grid_width: 10
       grid_height: 7
@@ -5364,6 +5365,7 @@ MonoBehaviour:
       - rand
       - rand
       - rand
+      goals: []
     - level_number: 3
       grid_width: 9
       grid_height: 8
@@ -5441,6 +5443,7 @@ MonoBehaviour:
       - rand
       - rand
       - rand
+      goals: []
     - level_number: 4
       grid_width: 7
       grid_height: 8
@@ -5502,6 +5505,7 @@ MonoBehaviour:
       - rand
       - rand
       - rand
+      goals: []
     - level_number: 5
       grid_width: 9
       grid_height: 9
@@ -5588,6 +5592,7 @@ MonoBehaviour:
       - rand
       - rand
       - rand
+      goals: []
     - level_number: 6
       grid_width: 8
       grid_height: 9
@@ -5665,6 +5670,7 @@ MonoBehaviour:
       - v
       - v
       - v
+      goals: []
     - level_number: 7
       grid_width: 9
       grid_height: 8
@@ -5742,6 +5748,7 @@ MonoBehaviour:
       - v
       - r
       - r
+      goals: []
     - level_number: 8
       grid_width: 9
       grid_height: 7
@@ -5810,6 +5817,7 @@ MonoBehaviour:
       - rand
       - rand
       - rand
+      goals: []
     - level_number: 9
       grid_width: 6
       grid_height: 9
@@ -5869,6 +5877,7 @@ MonoBehaviour:
       - r
       - r
       - r
+      goals: []
     - level_number: 10
       grid_width: 10
       grid_height: 8
@@ -5954,6 +5963,7 @@ MonoBehaviour:
       - b
       - b
       - b
+      goals: []
 --- !u!4 &1688017957
 Transform:
   m_ObjectHideFlags: 0
