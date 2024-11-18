@@ -59,6 +59,9 @@ public class Board : MonoBehaviour
 
     void InitializeBoard()
     {
+
+        Debug.Log($"Initializing board with width={width}, height={height}");
+
         if (rowPrefab == null || tilePrefab == null)
         {
             Debug.LogError("RowPrefab or TilePrefab is not assigned.");
@@ -114,8 +117,9 @@ public class Board : MonoBehaviour
             }
 
             // Initialize tiles and cubes for this row
-            for (int x = 0; x < width - 1; x++)
+            for (int x = 0; x < width; x++)
             {
+                print("TILE: " + x);
                 GameObject tile = Instantiate(tilePrefab, row.transform);
                 if (tile == null)
                 {
@@ -258,7 +262,7 @@ public class Board : MonoBehaviour
         goals = CalculateGoals(levelData.grid);
         for (int i = 0; i < goals.Length; i++)
         {
-            print(goals[i].goalType + " : "+ goals[i].count);
+            print(goals[i].goalType + " : " + goals[i].count);
         }
         PopulateGoals(goals);
         InitializeBoard();
@@ -272,7 +276,7 @@ public class Board : MonoBehaviour
         {
             if (y >= transform.childCount)
             {
-                Debug.LogError($"Row {y} is out of bounds for transform child count {transform.childCount}");
+                //Debug.LogError($"Row {y} is out of bounds for transform child count {transform.childCount}");
                 continue;
             }
 
@@ -282,9 +286,11 @@ public class Board : MonoBehaviour
             // Iterate over columns in reverse order (right to left)
             for (int x = width - 1; x >= 0; x--)
             {
+                print("WIDTH: " + x);
+                print("HEIGHT" + y);
                 if (x >= row.childCount)
                 {
-                    Debug.LogError($"Column {x} in row {y} is out of bounds for row child count {row.childCount}");
+                    //Debug.LogError($"Column {x} in row {y} is out of bounds for row child count {row.childCount}");
                     continue;
                 }
 
@@ -294,6 +300,17 @@ public class Board : MonoBehaviour
                 // Spawn the item in reverse order
                 SpawnItem(x, y, tile, itemType);
             }
+        }
+
+        Debug.Log("State of allCubes before FillBoard:");
+        for (int y = height - 1; y >= 0; y--)
+        {
+            string rowLog = $"Row {y}: ";
+            for (int x = 0; x < width; x++)
+            {
+                rowLog += allCubes[x, y] != null ? $"[{x},{y}] " : "[null] ";
+            }
+            Debug.Log(rowLog);
         }
     }
 
@@ -362,6 +379,8 @@ public class Board : MonoBehaviour
             {
                 allCubes[x, y] = item.GetComponent<Cube>();
             }
+
+
         }
     }
 
@@ -372,11 +391,11 @@ public class Board : MonoBehaviour
         List<Cube> matchingCubes = GetMatchingCubes(cube);
         if (matchingCubes.Count >= 2)
         {
-            Debug.Log("Matching cubes found: " + matchingCubes.Count);
-            foreach (Cube matchingCube in matchingCubes)
-            {
-                Debug.Log("Cube to destroy: " + matchingCube.x + ", " + matchingCube.y);
-            }
+            //Debug.Log("Matching cubes found: " + matchingCubes.Count);
+            //foreach (Cube matchingCube in matchingCubes)
+            //{
+            //    Debug.Log("Cube to destroy: " + matchingCube.x + ", " + matchingCube.y);
+            //}
             StartCoroutine(DestroyCubes(matchingCubes));
         }
     }
@@ -394,6 +413,8 @@ public class Board : MonoBehaviour
             if (matchingCubes.Contains(current)) continue;
 
             matchingCubes.Add(current);
+            Debug.Log($"Added cube to matchingCubes: ({current.x}, {current.y})");
+
             foreach (Cube neighbor in GetNeighbors(current))
             {
                 if (neighbor != null && neighbor.GetComponent<Image>().sprite == matchSprite)
@@ -403,8 +424,15 @@ public class Board : MonoBehaviour
             }
         }
 
+        Debug.Log("Final matchingCubes:");
+        foreach (Cube cube in matchingCubes)
+        {
+            Debug.Log($"({cube.x}, {cube.y})");
+        }
+
         return matchingCubes;
     }
+
 
     IEnumerable<Cube> GetNeighbors(Cube cube)
     {
@@ -431,10 +459,10 @@ public class Board : MonoBehaviour
             neighbors.Add(allCubes[cube.x, cube.y + 1]);
         }
 
-        foreach (var neighbor in neighbors)
-        {
-            Debug.Log($"Neighbor found at: {neighbor.x}, {neighbor.y}");
-        }
+        //foreach (var neighbor in neighbors)
+        //{
+        //    Debug.Log($"Neighbor found at: {neighbor.x}, {neighbor.y}");
+        //}
 
         return neighbors;
     }
@@ -447,42 +475,26 @@ public class Board : MonoBehaviour
         // Add cubes to be destroyed
         foreach (Cube cube in cubes)
         {
+            //Debug.Log($"Adding cube to destroy: ({cube.x}, {cube.y})");
             objectsToDestroy.Add(cube.gameObject);
-            allCubes[cube.x, cube.y] = null;
+            allCubes[cube.x, cube.y] = null; // Mark as null in allCubes
         }
 
-        // Check for adjacent obstacles
+        // Log obstacles being destroyed
         foreach (Cube cube in cubes)
         {
             foreach (Cube neighbor in GetNeighbors(cube))
             {
                 if (neighbor != null)
                 {
-                    Debug.Log($"Checking neighbor at: {neighbor.x}, {neighbor.y}");
-
-                    // Check for obstacles and add them to the destruction list if found
                     Box box = neighbor.GetComponent<Box>();
                     Stone stone = neighbor.GetComponent<Stone>();
                     Vase vase = neighbor.GetComponent<Vase>();
 
-                    if (box != null)
+                    if (box != null || stone != null || vase != null)
                     {
-                        Debug.Log("Box found adjacent to cube at: " + cube.x + ", " + cube.y);
-                        objectsToDestroy.Add(box.gameObject);
-                    }
-                    else if (stone != null)
-                    {
-                        Debug.Log("Stone found adjacent to cube at: " + cube.x + ", " + cube.y);
-                        objectsToDestroy.Add(stone.gameObject);
-                    }
-                    else if (vase != null)
-                    {
-                        Debug.Log("Vase found adjacent to cube at: " + cube.x + ", " + cube.y);
-                        objectsToDestroy.Add(vase.gameObject);
-                    }
-                    else
-                    {
-                        Debug.Log("No obstacle component found on neighbor at: " + neighbor.x + ", " + neighbor.y);
+                        Debug.Log($"Destroying obstacle adjacent to ({cube.x}, {cube.y}): ({neighbor.x}, {neighbor.y})");
+                        
                     }
                 }
             }
@@ -491,29 +503,74 @@ public class Board : MonoBehaviour
         // Destroy objects
         foreach (GameObject obj in objectsToDestroy)
         {
+            //Debug.Log($"Destroying object: {obj.name}");
             Destroy(obj);
         }
 
         yield return new WaitForSeconds(0.2f); // Add a short delay before refilling
 
-        // StartCoroutine(FillBoard()); // Uncomment when ready to refill
+        StartCoroutine(FillBoard());
     }
 
 
 
-    //IEnumerator FillBoard()
-    //{
-    //    for (int x = 0; x < width; x++)
-    //    {
-    //        for (int y = 0; y < height; y++)
-    //        {
-    //            if (allCubes[x, y] == null)
-    //            {
-    //                Transform tile = transform.GetChild(y).GetChild(x); // Get the tile transform
-    //                yield return new WaitForSeconds(0.1f);
-    //                SpawnItem(x, y, tile);
-    //            }
-    //        }
-    //    }
-    //}
+
+    IEnumerator FillBoard()
+    {
+        // Step 1: Move existing cubes down column by column
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (allCubes[x, y] == null) // If there's an empty space
+                {
+                    // Look for the first non-empty space above
+                    for (int k = y + 1; k < height; k++)
+                    {
+                        if (allCubes[x, k] != null)
+                        {
+                            Cube fallingCube = allCubes[x, k];
+                            allCubes[x, y] = fallingCube;
+                            allCubes[x, k] = null;
+
+                            // Log the cube movement
+                            //Debug.Log($"Moving cube from ({x}, {k}) to ({x}, {y})");
+
+                            // Update cube's logical position
+                            fallingCube.x = x;
+                            fallingCube.y = y;
+
+                            // Reparent to the new row and tile
+                            Transform targetRow = transform.GetChild(height - 1 - y);
+                            Transform targetTile = targetRow.GetChild(x);
+                            fallingCube.transform.SetParent(targetTile);
+
+                            // Animate the movement
+                            fallingCube.transform.DOMove(targetTile.position, 0.2f).SetEase(Ease.OutBounce);
+
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        yield return new WaitForSeconds(0.3f);
+
+        // Step 2: Fill empty spaces at the top with new cubes
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (allCubes[x, y] == null) // If there's still an empty space
+                {
+                    Transform targetRow = transform.GetChild(height - 1 - y);
+                    Transform targetTile = targetRow.GetChild(x);
+                    //Debug.Log($"Spawning new cube at ({x}, {y})");
+                    SpawnItem(x, y, targetTile, "rand");
+                    yield return new WaitForSeconds(0.1f);
+                }
+            }
+        }
+    }
 }
