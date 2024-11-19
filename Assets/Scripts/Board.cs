@@ -122,7 +122,6 @@ public class Board : MonoBehaviour
             // Initialize tiles and cubes for this row
             for (int x = 0; x < width; x++)
             {
-                print("TILE: " + x);
                 GameObject tile = Instantiate(tilePrefab, row.transform);
                 if (tile == null)
                 {
@@ -138,6 +137,7 @@ public class Board : MonoBehaviour
                 tileRect.anchoredPosition = new Vector2(xOffset, 0);
 
                 tile.name = $"Tile_{x + 1}_{y + 1}";
+                Debug.Log($"Tile created: Name=Tile_{x + 1}_{y + 1}, Logical Position=({x}, {y}), Hierarchy={tile.transform.parent.name}");
 
                 // Initialize a cube inside this tile
                 Cube cube = tile.GetComponent<Cube>();
@@ -299,7 +299,7 @@ public class Board : MonoBehaviour
                 string itemType = grid[y * width + x];
 
                 // Spawn the item in reverse order
-                SpawnItem(x, y, tile, itemType);
+                SpawnItem(x, height - 1- y, tile, itemType);
             }
         }
     }
@@ -389,6 +389,13 @@ public class Board : MonoBehaviour
 
             Debug.Log($"Moves left: {moveCount}");
 
+            if (AreGoalsCleared())
+            {
+                Debug.Log("Goals cleared! You win!");
+                return;
+            }
+
+
             // Check if moves are over
             if (moveCount <= 0)
             {
@@ -418,6 +425,28 @@ public class Board : MonoBehaviour
         {
             Debug.LogError("GameOverPanel is not assigned in the inspector.");
         }
+    }
+
+    bool AreGoalsCleared()
+    {
+        // Iterate through the board to check for remaining goal obstacles
+        foreach (Goal goal in goals)
+        {
+            if (goal.goalType == "bo") // Box
+            {
+                if (FindObjectOfType<Box>() != null) return false;
+            }
+            else if (goal.goalType == "s") // Stone
+            {
+                if (FindObjectOfType<Stone>() != null) return false;
+            }
+            else if (goal.goalType == "v") // Vase
+            {
+                if (FindObjectOfType<Vase>() != null) return false;
+            }
+        }
+
+        return true; // All goals cleared
     }
 
 
@@ -453,34 +482,58 @@ public class Board : MonoBehaviour
     {
         List<Cube> neighbors = new List<Cube>();
 
+        // Convert the logical row to Unity's indexing
+        int flippedY = height - 1 - cube.y;
+
+
+        //Debug.Log($"Checking neighbors for cube at ({cube.x}, {cube.y})");
+
+        //// Log the state of allCubes array
+        //Debug.Log("Current state of allCubes:");
+        //for (int y = height - 1; y >= 0; y--)
+        //{
+        //    string row = $"Row {y}: ";
+        //    for (int x = 0; x < width; x++)
+        //    {
+        //        row += allCubes[x, y] != null ? $"[{x},{y}] " : "[null] ";
+        //    }
+        //    Debug.Log(row);
+        //}
         // Check left neighbor
         if (cube.x > 0 && allCubes[cube.x - 1, cube.y] != null)
         {
             neighbors.Add(allCubes[cube.x - 1, cube.y]);
+            //Debug.Log($"Found left neighbor: {allCubes[cube.x - 1, cube.y].name} at Logical Position=({cube.x - 1}, {cube.y})");
         }
+
         // Check right neighbor
         if (cube.x < width - 1 && allCubes[cube.x + 1, cube.y] != null)
         {
             neighbors.Add(allCubes[cube.x + 1, cube.y]);
-        }
-        // Check bottom neighbor
-        if (cube.y > 0 && allCubes[cube.x, cube.y - 1] != null)
-        {
-            neighbors.Add(allCubes[cube.x, cube.y - 1]);
-        }
-        // Check top neighbor
-        if (cube.y < height - 1 && allCubes[cube.x, cube.y + 1] != null)
-        {
-            neighbors.Add(allCubes[cube.x, cube.y + 1]);
+            //Debug.Log($"Found right neighbor: {allCubes[cube.x + 1, cube.y].name} at Logical Position=({cube.x + 1}, {cube.y})");
         }
 
-        //foreach (var neighbor in neighbors)
-        //{
-        //    Debug.Log($"Neighbor found at: {neighbor.x}, {neighbor.y}");
-        //}
+        // Check bottom neighbor (row below)
+        if (flippedY > 0 && allCubes[cube.x, cube.y - 1] != null)
+        {
+            neighbors.Add(allCubes[cube.x, cube.y - 1]);
+            //Debug.Log($"Found bottom neighbor: {allCubes[cube.x, cube.y - 1].name} at Logical Position=({cube.x}, {cube.y - 1})");
+        }
+
+        // Check top neighbor (row above)
+        if (flippedY < height - 1 && allCubes[cube.x, cube.y + 1] != null)
+        {
+            neighbors.Add(allCubes[cube.x, cube.y + 1]);
+            //Debug.Log($"Found top neighbor: {allCubes[cube.x, cube.y + 1].name} at Logical Position=({cube.x}, {cube.y + 1})");
+        }
 
         return neighbors;
     }
+
+
+
+
+
 
 
     IEnumerator DestroyCubes(List<Cube> cubes)
@@ -490,42 +543,57 @@ public class Board : MonoBehaviour
         // Add cubes to be destroyed
         foreach (Cube cube in cubes)
         {
-            //Debug.Log($"Adding cube to destroy: ({cube.x}, {cube.y})");
             objectsToDestroy.Add(cube.gameObject);
             allCubes[cube.x, cube.y] = null; // Mark as null in allCubes
         }
 
-        // Log obstacles being destroyed
+        // Check for adjacent obstacles
         foreach (Cube cube in cubes)
         {
             foreach (Cube neighbor in GetNeighbors(cube))
             {
+                //print(neighbor);
                 if (neighbor != null)
                 {
-                    Box box = neighbor.GetComponent<Box>();
-                    Stone stone = neighbor.GetComponent<Stone>();
-                    Vase vase = neighbor.GetComponent<Vase>();
+                    Debug.Log($"Found neighbor: {neighbor.name} at ({neighbor.x}, {neighbor.y})");
 
-                    if (box != null || stone != null || vase != null)
+                    // Check for obstacles
+                    Debug.Log(neighbor.GetComponentInChildren<Box>());
+                    Box box = neighbor.GetComponentInChildren<Box>();
+                    Stone stone = neighbor.GetComponentInChildren<Stone>();
+                    Vase vase = neighbor.GetComponentInChildren<Vase>();
+
+                    if (box != null)
                     {
-                        Debug.Log($"Destroying obstacle adjacent to ({cube.x}, {cube.y}): ({neighbor.x}, {neighbor.y})");
-                        
+                        Debug.Log($"Destroying adjacent box at ({neighbor.x}, {neighbor.y})");
+                        objectsToDestroy.Add(box.gameObject);
+                    }
+                    else if (stone != null)
+                    {
+                        //Debug.Log($"Destroying adjacent stone at ({neighbor.x}, {neighbor.y})");
+                        objectsToDestroy.Add(stone.gameObject);
+                    }
+                    else if (vase != null)
+                    {
+                        //Debug.Log($"Destroying adjacent vase at ({neighbor.x}, {neighbor.y})");
+                        objectsToDestroy.Add(vase.gameObject);
                     }
                 }
             }
         }
 
-        // Destroy objects
+        // Destroy all objects
         foreach (GameObject obj in objectsToDestroy)
         {
-            //Debug.Log($"Destroying object: {obj.name}");
+            Debug.Log("Destroying: " + obj.name);
             Destroy(obj);
         }
 
         yield return new WaitForSeconds(0.2f); // Add a short delay before refilling
 
-        StartCoroutine(FillBoard());
+        //StartCoroutine(FillBoard());
     }
+
 
 
 
