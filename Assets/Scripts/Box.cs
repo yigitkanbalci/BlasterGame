@@ -12,4 +12,10 @@ public class Box : MonoBehaviour
         Debug.Log("Box at: " + x + ", " + y + " took damage.");
         Destroy(gameObject);
     }
+
+    public void Initialize(int x, int y)
+    {
+        this.x = x;
+        this.y = y;
+    }
 }

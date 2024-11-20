@@ -11,5 +11,11 @@ public class Stone : MonoBehaviour
         // Stone takes damage only from TNT
         Destroy(gameObject);
     }
+
+    public void Initialize(int x, int y)
+    {
+        this.x = x;
+        this.y = y;
+    }
 }
 

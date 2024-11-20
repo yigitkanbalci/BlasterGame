@@ -16,9 +16,10 @@ public class Vase : MonoBehaviour
         }
     }
 
-    public void FallDown()
+    public void Initialize(int x, int y)
     {
-        // Implement falling down logic
+        this.x = x;
+        this.y = y;
     }
 }
 

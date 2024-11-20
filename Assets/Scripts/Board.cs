@@ -18,7 +18,7 @@ public class Board : MonoBehaviour
     public int height;
     public int moveCount;
     public Sprite[] cubeSprites;
-    public Cube[,] allCubes;
+    public GameObject[,] allCubes;
     public Goal[] goals;
 
     public Sprite boxSprite;
@@ -83,7 +83,7 @@ public class Board : MonoBehaviour
             (boardRect.rect.height - (verticalPadding * (height - 1))) / height
         );
 
-        allCubes = new Cube[width, height];
+        allCubes = new GameObject[width, height];
 
         // Initialize rows from bottom to top
         for (int y = 0; y < height; y++)
@@ -150,7 +150,7 @@ public class Board : MonoBehaviour
                 {
                     cube.x = x;
                     cube.y = y; // Correct y-index for bottom-to-top layout
-                    allCubes[x, y] = cube;
+                    allCubes[x, y] = cube.gameObject;
                 }
             }
 
@@ -260,7 +260,7 @@ public class Board : MonoBehaviour
         width = levelData.grid_width;
         height = levelData.grid_height;
         moveCount = levelData.move_count;
-        allCubes = new Cube[width, height];
+        allCubes = new GameObject[width, height];
         levelUIManager.SetMoveText(moveCount);
         goals = CalculateGoals(levelData.grid);
         for (int i = 0; i < goals.Length; i++)
@@ -329,14 +329,17 @@ public class Board : MonoBehaviour
         else if (itemType == "bo")
         {
             item = Instantiate(boxPrefab, tile);
+            item.GetComponent<Box>().Initialize(x, y);
         }
         else if (itemType == "s")
         {
             item = Instantiate(stonePrefab, tile);
+            item.GetComponent<Stone>().Initialize(x, y);
         }
         else if (itemType == "v")
         {
             item = Instantiate(vasePrefab, tile);
+            item.GetComponent<Vase>().Initialize(x, y);
         }
 
         if (item != null)
@@ -365,9 +368,9 @@ public class Board : MonoBehaviour
 
             //itemRect.DOAnchorPos(Vector2.zero, 0.5f).SetEase(Ease.OutBounce); // Animate to the correct position
 
-            if (item.GetComponent<Cube>() != null)
+            if (item != null)
             {
-                allCubes[x, y] = item.GetComponent<Cube>();
+                allCubes[x, y] = item;
             }
 
 
@@ -436,8 +439,9 @@ public class Board : MonoBehaviour
             matchingCubes.Add(current);
             //Debug.Log($"Added cube to matchingCubes: ({current.x}, {current.y})");
 
-            foreach (Cube neighbor in GetNeighbors(current))
+            foreach (GameObject obj in GetNeighbors(current))
             {
+                Cube neighbor = obj.GetComponent<Cube>();
                 if (neighbor != null && neighbor.GetComponent<Image>().sprite == matchSprite)
                 {
                     cubesToCheck.Enqueue(neighbor);
@@ -449,84 +453,110 @@ public class Board : MonoBehaviour
     }
 
 
-    IEnumerable<Cube> GetNeighbors(Cube cube)
+    IEnumerable<GameObject> GetNeighbors(Cube cube)
     {
-        List<Cube> neighbors = new List<Cube>();
+        List<GameObject> neighbors = new List<GameObject>();
+
+        Debug.Log($"Getting neighbors for Cube at ({cube.x}, {cube.y}):");
 
         // Check left neighbor
         if (cube.x > 0 && allCubes[cube.x - 1, cube.y] != null)
         {
             neighbors.Add(allCubes[cube.x - 1, cube.y]);
+            Debug.Log($"Left Neighbor: {allCubes[cube.x - 1, cube.y].name} at ({cube.x - 1}, {cube.y})");
         }
+
         // Check right neighbor
         if (cube.x < width - 1 && allCubes[cube.x + 1, cube.y] != null)
         {
             neighbors.Add(allCubes[cube.x + 1, cube.y]);
+            Debug.Log($"Right Neighbor: {allCubes[cube.x + 1, cube.y].name} at ({cube.x + 1}, {cube.y})");
         }
+
         // Check bottom neighbor
         if (cube.y > 0 && allCubes[cube.x, cube.y - 1] != null)
         {
             neighbors.Add(allCubes[cube.x, cube.y - 1]);
+            Debug.Log($"Bottom Neighbor: {allCubes[cube.x, cube.y - 1].name} at ({cube.x}, {cube.y - 1})");
         }
+
         // Check top neighbor
         if (cube.y < height - 1 && allCubes[cube.x, cube.y + 1] != null)
         {
             neighbors.Add(allCubes[cube.x, cube.y + 1]);
+            Debug.Log($"Top Neighbor: {allCubes[cube.x, cube.y + 1].name} at ({cube.x}, {cube.y + 1})");
         }
 
-        //foreach (var neighbor in neighbors)
-        //{
-        //    Debug.Log($"Neighbor found at: {neighbor.x}, {neighbor.y}");
-        //}
-
+        Debug.Log($"Total Neighbors Found: {neighbors.Count}");
         return neighbors;
     }
 
 
+
     IEnumerator DestroyCubes(List<Cube> cubes)
     {
+        LogBoardState();
         HashSet<GameObject> objectsToDestroy = new HashSet<GameObject>();
 
         // Add cubes to be destroyed
         foreach (Cube cube in cubes)
         {
-            //Debug.Log($"Adding cube to destroy: ({cube.x}, {cube.y})");
             objectsToDestroy.Add(cube.gameObject);
             allCubes[cube.x, cube.y] = null; // Mark as null in allCubes
         }
 
-        // Log obstacles being destroyed
-        foreach (Cube cube in cubes)
-        {
-            foreach (Cube neighbor in GetNeighbors(cube))
+            // Check for obstacles in neighbors and add them to the destroy list
+            foreach (Cube cube in cubes)
             {
-                if (neighbor != null)
+                foreach (GameObject neighbor in GetNeighbors(cube))
                 {
-                    Box box = neighbor.GetComponent<Box>();
-                    Stone stone = neighbor.GetComponent<Stone>();
-                    Vase vase = neighbor.GetComponent<Vase>();
-
-                    if (box != null || stone != null || vase != null)
+                    if (neighbor != null)
                     {
-                        Debug.Log($"Destroying obstacle adjacent to ({cube.x}, {cube.y}): ({neighbor.x}, {neighbor.y})");
-                        
+                        Debug.Log($"Processing neighbor: {neighbor.name} at ({cube.x}, {cube.y})");
+
+                        // Check if the neighbor contains a Box, Stone, or Vase
+                        Box box = neighbor.GetComponent<Box>();
+                        Stone stone = neighbor.GetComponent<Stone>();
+                        Vase vase = neighbor.GetComponent<Vase>();
+
+                        if (box != null)
+                        {
+                            Debug.Log($"Box detected: {box.name} at ({box.x}, {box.y})");
+                            objectsToDestroy.Add(box.gameObject);
+                            allCubes[box.x, box.y] = null; // Clear box position in allCubes
+                        }
+
+                        if (stone != null)
+                        {
+                            Debug.Log($"Stone detected: {stone.name} at ({stone.x}, {stone.y})");
+                            objectsToDestroy.Add(stone.gameObject);
+                            allCubes[stone.x, stone.y] = null; // Clear stone position in allCubes
+                        }
+
+                        if (vase != null)
+                        {
+                            Debug.Log($"Vase detected: {vase.name} at ({vase.x}, {vase.y})");
+                            objectsToDestroy.Add(vase.gameObject);
+                            allCubes[vase.x, vase.y] = null; // Clear vase position in allCubes
+                        }
                     }
                 }
             }
-        }
 
-        // Destroy objects
-        foreach (GameObject obj in objectsToDestroy)
+
+            // Destroy all objects collected in the set
+            foreach (GameObject obj in objectsToDestroy)
         {
-            //Debug.Log($"Destroying object: {obj.name}");
+            Debug.Log("Destroying: " + obj.name);
             Destroy(obj);
         }
 
         yield return new WaitForSeconds(0.2f); // Add a short delay before refilling
 
+        // Call FillBoard to adjust the board state after destruction
+        LogBoardState();
         StartCoroutine(FillBoard());
     }
-
 
 
 
@@ -544,26 +574,30 @@ public class Board : MonoBehaviour
                     {
                         if (allCubes[x, k] != null)
                         {
-                            Cube fallingCube = allCubes[x, k];
-                            allCubes[x, y] = fallingCube;
-                            allCubes[x, k] = null;
+                            Cube fallingCube = allCubes[x, k].GetComponent<Cube>();
+                            if (fallingCube != null)
+                            {
+                                allCubes[x, y] = fallingCube.gameObject;
+                                allCubes[x, k] = null;
 
-                            // Log the cube movement
-                            //Debug.Log($"Moving cube from ({x}, {k}) to ({x}, {y})");
+                                // Log the cube movement
+                                //Debug.Log($"Moving cube from ({x}, {k}) to ({x}, {y})");
 
-                            // Update cube's logical position
-                            fallingCube.x = x;
-                            fallingCube.y = y;
+                                // Update cube's logical position
+                                fallingCube.x = x;
+                                fallingCube.y = y;
 
-                            // Reparent to the new row and tile
-                            Transform targetRow = transform.GetChild(height - 1 - y);
-                            Transform targetTile = targetRow.GetChild(x);
-                            fallingCube.transform.SetParent(targetTile);
+                                // Reparent to the new row and tile
+                                Transform targetRow = transform.GetChild(height - 1 - y);
+                                Transform targetTile = targetRow.GetChild(x);
+                                fallingCube.transform.SetParent(targetTile);
 
-                            // Animate the movement
-                            fallingCube.transform.DOMove(targetTile.position, 0.2f).SetEase(Ease.OutBounce);
+                                // Animate the movement
+                                fallingCube.transform.DOMove(targetTile.position, 0.2f).SetEase(Ease.OutBounce);
 
-                            break;
+                                break;
+                            }
+                            
                         }
                     }
                 }
@@ -588,4 +622,20 @@ public class Board : MonoBehaviour
             }
         }
     }
+
+    void LogBoardState()
+    {
+        Debug.Log("Current board state:");
+        for (int y = height - 1; y >= 0; y--)
+        {
+            string row = $"Row {y}: ";
+            for (int x = 0; x < width; x++)
+            {
+                row += allCubes[x, y] != null ? allCubes[x, y].name : "null";
+                row += " | ";
+            }
+            Debug.Log(row);
+        }
+    }
+
 }
