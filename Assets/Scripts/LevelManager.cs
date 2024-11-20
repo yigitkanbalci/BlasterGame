@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.IO;
 
 
@@ -49,6 +50,12 @@ public class LevelLoader : MonoBehaviour
         }
         Debug.LogError("Level number out of range");
         return null;
+    }
+
+    public void RetryLevel()
+    {
+        Debug.Log("Button Clicked");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
 
