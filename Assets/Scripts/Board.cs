@@ -222,43 +222,50 @@ public class Board : MonoBehaviour
 
     void PopulateGoals(Goal[] goals)
     {
+        // Clear any existing UI elements
         foreach (Transform child in goalContainer)
         {
-            Destroy(child.gameObject); // Clear any existing UI
+            Destroy(child.gameObject);
         }
 
         foreach (Goal goal in goals)
         {
+            // Instantiate a new goal item
             GameObject goalItem = Instantiate(goalItemPrefab, goalContainer);
-            goalItem.transform.localPosition = Vector3.zero;
-            goalItem.transform.localRotation = Quaternion.identity;
-            goalItem.transform.localScale = Vector3.one;
-            print(goalItem);
+
+            // Set icon and count dynamically
             Image icon = goalItem.GetComponentInChildren<Image>();
             TMP_Text count = goalItem.GetComponentInChildren<TMP_Text>();
-            print(goalItem.GetComponent<RectTransform>().anchoredPosition);
 
-            print(icon);
-            print(count);
-            // Set icon and count dynamically
-            icon.sprite = GetGoalSprite(goal.goalType); // Fetch sprite based on goal type
-            icon.SetNativeSize();
-            RectTransform iconRect = icon.GetComponent<RectTransform>();
-            iconRect.localScale = Vector3.one; // Reset scale
-
-            // Ensure it fits within a maximum size
-            float maxSize = 50f; // Adjust this value based on your UI design
-            float largestDimension = Mathf.Max(iconRect.sizeDelta.x, iconRect.sizeDelta.y);
-            if (largestDimension > maxSize)
+            if (icon != null)
             {
-                float scaleFactor = maxSize / largestDimension;
-                iconRect.sizeDelta *= scaleFactor; // Scale down proportionally
+                icon.sprite = GetGoalSprite(goal.goalType); // Fetch sprite based on goal type
+                icon.SetNativeSize();
+
+                // Optionally scale down the icon if needed
+                float maxSize = 40f; // Adjust this value based on your UI design
+                RectTransform iconRect = icon.GetComponent<RectTransform>();
+                float largestDimension = Mathf.Max(iconRect.sizeDelta.x, iconRect.sizeDelta.y);
+                if (largestDimension > maxSize)
+                {
+                    float scaleFactor = maxSize / largestDimension;
+                    iconRect.sizeDelta *= scaleFactor; // Scale down proportionally
+                }
             }
-            count.text = goal.count.ToString();
+
+            if (count != null)
+            {
+                count.text = goal.count.ToString();
+                float maxFontSize = 20f; // Maximum font size for the count
+                float minFontSize = 10f; // Minimum font size for the count
+                float scaleFactor = goalItem.GetComponent<RectTransform>().rect.width / 100f; // Example scaling factor
+                count.fontSize = Mathf.Clamp(scaleFactor * maxFontSize, minFontSize, maxFontSize);
+            }
 
             goalItem.name = $"Goal_{goal.goalType}";
         }
     }
+
 
     void UpdateGoalUI(Goal goal)
     {

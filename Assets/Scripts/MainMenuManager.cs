@@ -15,9 +15,12 @@ public class MainMenuManager : MonoBehaviour
     void Start()
     {
         //PlayerPrefs.SetInt("CurrentLevel", 1);
-        //ResetProgress();
         currentLevel = PlayerPrefs.GetInt("CurrentLevel", 1);
         Debug.Log("CurrentLevel in MainMenu: " + currentLevel);
+        if (currentLevel > 10)
+        {
+            ResetProgress();
+        }
         UpdateLevelButtons();
     }
 
