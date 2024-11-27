@@ -606,6 +606,28 @@ public class Board : MonoBehaviour
                             Debug.Log($"TNT detected: {tnt.name} at ({tnt.x}, {tnt.y})");
                             objectsToDestroy.Add(tnt.gameObject);
                             allCubes[tnt.x, tnt.y] = null;
+
+                            // Handle TNT explosion (destroy all objects in a 5x5 area)
+                            for (int dx = -2; dx <= 2; dx++)
+                            {
+                                for (int dy = -2; dy <= 2; dy++)
+                                {
+                                    int targetX = tnt.x + dx;
+                                    int targetY = tnt.y + dy;
+
+                                    // Check if within bounds
+                                    if (targetX >= 0 && targetX < width && targetY >= 0 && targetY < height)
+                                    {
+                                        GameObject targetObject = allCubes[targetX, targetY];
+                                        if (targetObject != null && !objectsToDestroy.Contains(targetObject))
+                                        {
+                                            objectsToDestroy.Add(targetObject);
+                                            allCubes[targetX, targetY] = null; // Clear the position in allCubes
+                                            DecrementGoal(targetObject);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
