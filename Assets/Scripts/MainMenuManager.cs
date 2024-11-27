@@ -14,8 +14,10 @@ public class MainMenuManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        PlayerPrefs.SetInt("CurrentLevel", 1);
+        //PlayerPrefs.SetInt("CurrentLevel", 1);
+        //ResetProgress();
         currentLevel = PlayerPrefs.GetInt("CurrentLevel", 1);
+        Debug.Log("CurrentLevel in MainMenu: " + currentLevel);
         UpdateLevelButtons();
     }
 
@@ -48,24 +50,42 @@ public class MainMenuManager : MonoBehaviour
     public void StartLevel(int levelIndex)
     {
         Debug.Log("Starting Level " + levelIndex);
-        // Load the scene corresponding to the selected level
-        SceneManager.LoadScene("Level " + levelIndex);
+
+        // Check if the scene exists
+        string sceneName = "Level 1";
+        if (Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            SceneManager.LoadScene(sceneName); // Load the selected level scene
+        }
+        else
+        {
+            Debug.LogError("Scene " + sceneName + " does not exist or is not added to Build Settings.");
+        }
     }
 
     public void CompleteLevel(int levelIndex)
     {
         Debug.Log("Completed Level " + levelIndex);
-        // Disable the current button and enable the next one
-        if (levelIndex <= levelButtons.Length)
-        {
-            levelButtons[levelIndex - 1].gameObject.SetActive(false);
-        }
+
         if (levelIndex < levelButtons.Length)
         {
-            levelButtons[levelIndex].gameObject.SetActive(true);
+            levelButtons[levelIndex].gameObject.SetActive(false);
+            currentLevel = Mathf.Max(currentLevel, levelIndex + 1); // Increment level only if higher
+            PlayerPrefs.SetInt("CurrentLevel", currentLevel);
+            UpdateLevelButtons();
         }
-        currentLevel++;
-        PlayerPrefs.SetInt("CurrentLevel", currentLevel);
+        else
+        {
+            Debug.Log("All levels completed!");
+            finishedButton.gameObject.SetActive(true);
+        }
+    }
+
+    public void ResetProgress()
+    {
+        PlayerPrefs.SetInt("CurrentLevel", 1);
+        PlayerPrefs.Save();
+        Debug.Log("Progress reset to Level 1");
         UpdateLevelButtons();
     }
 }

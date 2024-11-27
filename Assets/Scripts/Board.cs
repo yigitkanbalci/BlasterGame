@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;
 using TMPro;
 using DG.Tweening;
@@ -14,6 +15,8 @@ public class Board : MonoBehaviour
     public GameObject vasePrefab;
     public GameObject rowPrefab;
     public GameObject tilePrefab;
+    public GameObject tntPrefab;
+
     public int width;
     public int height;
     public int moveCount;
@@ -32,6 +35,7 @@ public class Board : MonoBehaviour
     private LevelUIManager levelUIManager;
 
     public GameObject gameOverPanel;
+    public GameObject gameWonPanel;
     public Canvas levelCanvas;
 
 
@@ -44,7 +48,7 @@ public class Board : MonoBehaviour
         if (levelLoader != null)
         {
             // Load the desired level
-            LevelData levelData = levelLoader.GetLevel(1);
+            LevelData levelData = levelLoader.GetLevel(PlayerPrefs.GetInt("CurrentLevel"));
             if (levelData != null)
             {
                 LoadLevel(levelData);
@@ -356,6 +360,11 @@ public class Board : MonoBehaviour
             item = Instantiate(vasePrefab, tile);
             item.GetComponent<Vase>().Initialize(x, y);
         }
+        else if (itemType == "t")
+        {
+            item = Instantiate(tntPrefab, tile);
+            item.GetComponent<TNT>().Initialize(x, y);
+        }
 
         if (item != null)
         { // Initial position above the board
@@ -412,7 +421,6 @@ public class Board : MonoBehaviour
             {
                 Debug.Log("Out of moves!");
                 ShowGameOverModal();
-                //CheckGameOver();
             }
         }
         else
@@ -435,6 +443,42 @@ public class Board : MonoBehaviour
         else
         {
             Debug.LogError("GameOverPanel is not assigned in the inspector.");
+        }
+    }
+
+    private bool CheckGameOver()
+    {
+        foreach (Goal goal in goals)
+        {
+            if (goal.count > 0)
+            {
+                return false; // At least one goal is not cleared
+            }
+        }
+        return true; // All goals are cleared
+    }
+
+    private void ShowGameWonModal()
+    {
+        if (gameWonPanel != null)
+        {
+            levelCanvas.sortingOrder = 20;
+            gameWonPanel.SetActive(true);
+            RectTransform panelTransform = gameWonPanel.GetComponent<RectTransform>();
+            panelTransform.localScale = Vector3.zero;
+            panelTransform.DOScale(Vector3.one, 0.5f).SetEase(Ease.OutBounce);
+            Debug.Log("Game Won modal displayed.");
+
+            // Update PlayerPrefs for the next level
+            int currentLevel = PlayerPrefs.GetInt("CurrentLevel", 1);
+            PlayerPrefs.SetInt("CurrentLevel", currentLevel + 1);
+            PlayerPrefs.Save();
+
+            StartCoroutine(WaitAndLoadMainMenu());
+        }
+        else
+        {
+            Debug.LogError("GameWonPanel is not assigned in the inspector.");
         }
     }
 
@@ -533,6 +577,7 @@ public class Board : MonoBehaviour
                         Box box = neighbor.GetComponent<Box>();
                         Stone stone = neighbor.GetComponent<Stone>();
                         Vase vase = neighbor.GetComponent<Vase>();
+                        TNT tnt = neighbor.GetComponent<TNT>();
                         DecrementGoal(neighbor);
 
                         if (box != null)
@@ -554,6 +599,13 @@ public class Board : MonoBehaviour
                             Debug.Log($"Vase detected: {vase.name} at ({vase.x}, {vase.y})");
                             objectsToDestroy.Add(vase.gameObject);
                             allCubes[vase.x, vase.y] = null; // Clear vase position in allCubes
+                        }
+
+                        if (tnt != null)
+                        {
+                            Debug.Log($"TNT detected: {tnt.name} at ({tnt.x}, {tnt.y})");
+                            objectsToDestroy.Add(tnt.gameObject);
+                            allCubes[tnt.x, tnt.y] = null;
                         }
                     }
                 }
@@ -601,10 +653,24 @@ public class Board : MonoBehaviour
                 {
                     goal.DecrementGoal();
                     UpdateGoalUI(goal); // Update the UI
+
+                    if (CheckGameOver())
+                    {
+                        ShowGameWonModal();
+                    }
                     break;
                 }
             }
         }
+    }
+
+    private IEnumerator WaitAndLoadMainMenu()
+    {
+        // Wait for 5 seconds
+        yield return new WaitForSeconds(5f);
+
+        // Load the main menu scene
+        SceneManager.LoadScene("MainMenu"); // Replace "MainMenu" with your main menu scene name
     }
 
 
