@@ -420,7 +420,11 @@ public class Board : MonoBehaviour
             if (moveCount <= 0)
             {
                 Debug.Log("Out of moves!");
-                ShowGameOverModal();
+                if (!CheckGameOver())
+                {
+                    ShowGameOverModal();
+                }
+                
             }
         }
         else
