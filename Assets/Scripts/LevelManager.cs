@@ -75,6 +75,14 @@ public class Goal
 {
     public string goalType;
     public int count;
+
+    public void DecrementGoal()
+    {
+        if (count > 0)
+        {
+            count--;
+        }
+    }
 }
 
 [System.Serializable]

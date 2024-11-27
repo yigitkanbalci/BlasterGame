@@ -251,6 +251,21 @@ public class Board : MonoBehaviour
                 iconRect.sizeDelta *= scaleFactor; // Scale down proportionally
             }
             count.text = goal.count.ToString();
+
+            goalItem.name = $"Goal_{goal.goalType}";
+        }
+    }
+
+    void UpdateGoalUI(Goal goal)
+    {
+        Transform goalTransform = goalContainer.Find($"Goal_{goal.goalType}");
+        if (goalTransform != null)
+        {
+            TMP_Text count = goalTransform.GetComponentInChildren<TMP_Text>();
+            if (count != null)
+            {
+                count.text = goal.count.ToString();
+            }
         }
     }
 
@@ -518,6 +533,7 @@ public class Board : MonoBehaviour
                         Box box = neighbor.GetComponent<Box>();
                         Stone stone = neighbor.GetComponent<Stone>();
                         Vase vase = neighbor.GetComponent<Vase>();
+                        DecrementGoal(neighbor);
 
                         if (box != null)
                         {
@@ -557,6 +573,40 @@ public class Board : MonoBehaviour
         LogBoardState();
         StartCoroutine(FillBoard());
     }
+
+    void DecrementGoal(GameObject obj)
+    {
+        // Identify the goal type of the object
+        string goalType = null;
+
+        if (obj.GetComponent<Box>() != null)
+        {
+            goalType = "bo"; // Box
+        }
+        else if (obj.GetComponent<Stone>() != null)
+        {
+            goalType = "s"; // Stone
+        }
+        else if (obj.GetComponent<Vase>() != null)
+        {
+            goalType = "v"; // Vase
+        }
+
+        // Find the corresponding goal and decrement it
+        if (!string.IsNullOrEmpty(goalType))
+        {
+            foreach (Goal goal in goals)
+            {
+                if (goal.goalType == goalType)
+                {
+                    goal.DecrementGoal();
+                    UpdateGoalUI(goal); // Update the UI
+                    break;
+                }
+            }
+        }
+    }
+
 
 
 
